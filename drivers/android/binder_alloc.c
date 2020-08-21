@@ -43,10 +43,10 @@ struct list_lru binder_alloc_lru;
 static DEFINE_MUTEX(binder_alloc_mmap_lock);
 
 enum {
+	BINDER_DEBUG_USER_ERROR             = 1U << 0,
 	BINDER_DEBUG_OPEN_CLOSE             = 1U << 1,
 	BINDER_DEBUG_BUFFER_ALLOC           = 1U << 2,
 	BINDER_DEBUG_BUFFER_ALLOC_ASYNC     = 1U << 3,
-	BINDER_DEBUG_USER_ERROR             = 1U << 4,
 };
 static uint32_t binder_alloc_debug_mask = 0x10;
 
@@ -377,44 +377,13 @@ static void debug_low_async_space_locked(struct binder_alloc *alloc, int pid)
 	}
 
 	/*
-	 * Warn if this pid has more than 100 transactions, or more than 50% of
+	 * Warn if this pid has more than 50 transactions, or more than 50% of
 	 * async space (which is 25% of total buffer size).
 	 */
-	if (num_buffers > 100 || total_alloc_size > alloc->buffer_size / 4) {
-
-		/* trigger aee kernel exception and get native backtrace */
-		debug_task = get_pid_task(find_vpid(pid), PIDTYPE_PID);
-		if (debug_task) {
-			bool is_netd = false;
-			struct task_struct *t;
-
-			/* trigger aee exception for netd only */
-			if (strstr(debug_task->comm, "Binder:")) {
-				for_each_thread(debug_task, t)
-					if (strcmp(t->comm, "netd") == 0) {
-						is_netd = true;
-						break;
-					}
-			}
-
-			if (!is_netd) {
-				put_task_struct(debug_task);
-				return;
-			}
-
-			binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
-			     "%d: pid %d comm %s spamming oneway? %zd buffers allocated for a total size of %zd\n",
-			      alloc->pid, pid, debug_task->comm, num_buffers, total_alloc_size);
-
-/* #if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
- *			aee_kernel_exception_api(__FILE__, __LINE__,
- *				DB_OPT_DEFAULT | DB_OPT_NATIVE_BACKTRACE,
- *				"[binder_low_async]",
- *				"\nCRDISPATCH_KEY:netd binder issue");
- * #endif
- */
-			put_task_struct(debug_task);
-		}
+	if (num_buffers > 50 || total_alloc_size > alloc->buffer_size / 4) {
+		binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
+			     "%d: pid %d spamming oneway? %zd buffers allocated for a total size of %zd\n",
+			      alloc->pid, pid, num_buffers, total_alloc_size);
 	}
 }
 
@@ -570,7 +539,7 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 			     "%d: binder_alloc_buf size %zd async free %zd\n",
 			      alloc->pid, size, alloc->free_async_space);
 
-		if (alloc->free_async_space < alloc->buffer_size / 10) {
+    if (alloc->free_async_space < alloc->buffer_size / 10) {
 			/*
 			 * Start detecting spammers once we have less than 20%
 			 * of async space left (which is less than 10% of total
