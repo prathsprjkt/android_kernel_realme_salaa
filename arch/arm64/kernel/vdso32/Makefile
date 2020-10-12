@@ -22,6 +22,12 @@ else
 LD_COMPAT ?= $(CROSS_COMPILE_COMPAT)ld
 endif
 
+ifneq ($(LLVM),)
+LD_COMPAT ?= $(LD)
+else
+LD_COMPAT ?= $(CROSS_COMPILE_COMPAT)ld
+endif
+
 # Same as cc-*option, but using CC_ARM32 instead of CC
 cc32-option = $(call try-run,\
         $(CC_ARM32) $(1) -c -x c /dev/null -o "$$TMP",$(1),$(2))
@@ -151,7 +157,7 @@ $(asm-obj-vdso): %.o: %.S FORCE
 
 # Actual build commands
 quiet_cmd_vdsold = VDSOL32   $@
-      cmd_vdsold = $(LD_ARM32) $(VDSO_LDFLAGS) \
+      cmd_vdsold = $(LD_COMPAT) $(VDSO_LDFLAGS) \
                    -T $(filter %.lds,$^) $(filter %.o,$^) -o $@
 quiet_cmd_vdsocc = VDSOC32   $@
       cmd_vdsocc = $(CC_ARM32) -Wp,-MD,$(depfile) $(VDSO_CFLAGS) -c -o $@ $<
