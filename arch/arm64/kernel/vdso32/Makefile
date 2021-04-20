@@ -5,7 +5,7 @@
 # A mix between the arm64 and arm vDSO Makefiles.
 
 ifeq ($(cc-name),clang)
-  CC_ARM32 := $(CC) $(CLANG_TARGET_ARM32)
+  CC_ARM32 := $(CC) --target=$(notdir $(CROSS_COMPILE_COMPAT:%-=%))
 ifeq ($(ld-name),lld)
   LD_ARM32 := $(LD)
 else
