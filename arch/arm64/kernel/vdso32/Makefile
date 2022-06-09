@@ -9,11 +9,11 @@ ifeq ($(cc-name),clang)
 ifeq ($(ld-name),lld)
   LD_ARM32 := $(LD)
 else
-  LD_ARM32 ?= $(CROSS_COMPILE_ARM32)ld
+  LD_ARM32 ?= $(CROSS_COMPILE_COMPAT)ld
 endif
 else
-  CC_ARM32 ?= $(CROSS_COMPILE_ARM32)$(cc-name)
-  LD_ARM32 ?= $(CROSS_COMPILE_ARM32)ld
+  CC_ARM32 ?= $(CROSS_COMPILE_COMPAT)$(cc-name)
+  LD_ARM32 ?= $(CROSS_COMPILE_COMPAT)ld
 endif
 
 ifneq ($(LLVM),)
